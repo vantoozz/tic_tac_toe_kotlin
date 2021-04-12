@@ -14,7 +14,7 @@ data class State(
         }
     }
 
-    val freePosition: Set<Int>
+    val freePositions: Set<Int>
         get() = (1..9).filterNot { figures.containsKey(it) }.toSet()
 
     fun withTurnMade(position: Int): State {
