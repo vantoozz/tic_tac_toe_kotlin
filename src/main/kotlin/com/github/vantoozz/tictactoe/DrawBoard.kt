@@ -2,7 +2,7 @@ package com.github.vantoozz.tictactoe
 
 class DrawBoard : AbstractStep() {
     override fun doRun(state: State): State {
-        (1..9).forEach {
+        state.positions().forEach {
             print(
                 when (state.figures[it]) {
                     Figure.X -> "X"
@@ -10,16 +10,17 @@ class DrawBoard : AbstractStep() {
                     else -> " "
                 }
             )
-            if (0 != it % 3) {
+
+            if (it.y != state.boardSize - 1) {
                 print("|")
                 return@forEach
             }
-            if (0 == it % 3) {
-                print("\n")
+
+            if (it.x != state.boardSize - 1) {
+                print("\n" + "-+".repeat(state.boardSize - 1) + "-" + "+-".repeat(state.boardSize - 1))
             }
-            if (9 != it) {
-                print("-+-+-\n")
-            }
+
+            print("\n")
         }
 
         return state

@@ -1,11 +1,16 @@
 package com.github.vantoozz.tictactoe
 
 data class State(
-    val figures: Map<Int, Figure?>,
+    val figures: Map<Position, Figure?>,
     val activePlayer: Figure?,
     val result: Result? = null,
+    val boardSize: Int = 2,
 ) {
     init {
+        if (boardSize < 1) {
+            throw RuntimeException("Board size must be greater than zero")
+        }
+
         if (result != null && activePlayer != null) {
             throw RuntimeException("Finished game cannot have an active player")
         }
@@ -14,10 +19,25 @@ data class State(
         }
     }
 
-    val freePositions: Set<Int>
-        get() = (1..9).filterNot { figures.containsKey(it) }.toSet()
 
-    fun withTurnMade(position: Int): State {
+    fun positions(
+        predicate: (Position) -> Boolean = { true }
+    ) = with(boardSize - 1) {
+        (-this..this)
+            .map { x ->
+                (-this..this)
+                    .map { y -> Position(x, y) }
+            }
+            .flatten()
+            .filter { predicate(it) }
+            .toSet()
+    }
+
+
+    val freePositions: Set<Position>
+        get() = positions { !figures.containsKey(it) }
+
+    fun withTurnMade(position: Position): State {
         if (figures.containsKey(position)) {
             throw RuntimeException("Position already taken")
         }
@@ -39,8 +59,14 @@ data class State(
         } ?: throw RuntimeException("Cannot make a turn. No active player")
     }
 
-    private fun checkResult(figures: Map<Int, Figure?>): Result? {
-        if (figures.size < 3) {
+    private fun checkResult(figures: Map<Position, Figure?>): Result? {
+        if (boardSize < 2) {
+            return null
+        }
+
+        val rowSize = boardSize * 2 - 1
+
+        if (figures.size < rowSize) {
             return null
         }
 
@@ -51,30 +77,30 @@ data class State(
                 }
             }
             .filterNotNull()
-            .fold(mutableMapOf<Figure, Set<Int>>()) { carry, pair ->
+            .fold(mutableMapOf<Figure, Set<Position>>()) { carry, pair ->
                 carry.also {
                     it[pair.first] = (it[pair.first] ?: emptySet()) + setOf(pair.second)
                 }
             }
             .toMap()
-            .map {
-                it.key to it.value.let { set ->
-                    set.containsAll(setOf(1, 2, 3))
-                            ||
-                            set.containsAll(setOf(4, 5, 6))
-                            ||
-                            set.containsAll(setOf(7, 8, 9))
-                            ||
-                            set.containsAll(setOf(1, 4, 7))
-                            ||
-                            set.containsAll(setOf(2, 5, 8))
-                            ||
-                            set.containsAll(setOf(3, 6, 9))
-                            ||
-                            set.containsAll(setOf(1, 5, 9))
-                            ||
-                            set.containsAll(setOf(3, 5, 7))
-                }
+            .map { entry ->
+                entry.key to entry.value
+                    .let { figures ->
+                        val minX = figures.minOfOrNull { it.x } ?: -(boardSize - 1)
+                        val minY = figures.minOfOrNull { it.y } ?: -(boardSize - 1)
+                        (minY until boardSize).map { y ->
+                            (minX until boardSize).map { x ->
+                                entry.value.hasAnyRow(
+                                    Position(x, y),
+                                    rowSize,
+                                    { position, offset -> position.copy(x = x + offset) },
+                                    { position, offset -> position.copy(y = y + offset) },
+                                    { position, offset -> position.copy(x = x + offset, y = y + offset) },
+                                    { position, offset -> position.copy(x = x - offset, y = y + offset) },
+                                )
+                            }
+                        }.flatten().count { it } > 0
+                    }
             }
             .filter { it.second }
             .map { it.first }
@@ -87,7 +113,7 @@ data class State(
             return Result(draw = false, winner = winners.first())
         }
 
-        if (figures.size == 9) {
+        if (freePositions.isEmpty()) {
             return Result(draw = true)
         }
 
@@ -105,6 +131,24 @@ enum class Figure {
             O -> X
         }
 }
+
+private fun Set<Position>.hasAnyRow(
+    position: Position,
+    rowSize: Int,
+    vararg rules: (Position, Int) -> Position
+) =
+    rules.firstOrNull { hasRow(position, rowSize, it) } != null
+
+private fun Set<Position>.hasRow(
+    position: Position,
+    rowSize: Int,
+    nextPositionFn: (Position, Int) -> Position
+) = (0 until rowSize)
+    .map { nextPositionFn(position, it) }
+    .map { contains(it) }
+    .count { it } == rowSize
+
+data class Position(val x: Int, val y: Int)
 
 data class Result(
     val winner: Figure? = null,

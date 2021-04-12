@@ -27,7 +27,7 @@ class MakeTurn : AbstractStep() {
     }
 
 
-    private fun pickBestPosition(state: State, forPlayer: Figure): Int {
+    private fun pickBestPosition(state: State, forPlayer: Figure): Position {
         val position = state.freePositions
             .maxByOrNull { minimax(state.withTurnMade(it), forPlayer) }
             ?: throw RuntimeException("Cannot make a turn")
@@ -60,19 +60,21 @@ class MakeTurn : AbstractStep() {
         } ?: throw RuntimeException("Invalid state")
     }
 
-    private fun handleInput(state: State): Int {
+    private fun handleInput(state: State): Position {
         while (true) try {
             val input = readLine() ?: throw RuntimeException("No input")
 
-            val position = try {
+            val positionInt = try {
                 input.toInt()
             } catch (e: Exception) {
                 throw RuntimeException("Not a number")
             }
 
-            if (position < 1 || position > 9) {
+            if (positionInt < 1 || positionInt > 9) {
                 throw RuntimeException("Position must be between 1 and 9")
             }
+
+            val position = Position(positionInt, 0)
 
             if (state.figures.containsKey(position)) {
                 throw RuntimeException("Position already taken")
