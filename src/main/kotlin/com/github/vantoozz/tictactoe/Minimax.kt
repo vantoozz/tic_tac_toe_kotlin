@@ -6,7 +6,13 @@ internal fun State.pickBestTurn(): Position? {
     }
 }
 
-private fun minimax(state: State, forPlayer: Figure, depth: Int): Double {
+private fun minimax(
+    state: State,
+    forPlayer: Figure,
+    depth: Int,
+    alpha: Double? = null,
+    beta: Double? = null
+): Double {
     if (depth <= 0) {
         return relativeValue(state, forPlayer)
     }
@@ -25,14 +31,41 @@ private fun minimax(state: State, forPlayer: Figure, depth: Int): Double {
     }
 
     state.activePlayer?.let { activePlayer ->
+
+
         return when (activePlayer) {
-            forPlayer -> state.freePositions
-                .maxOfOrNull { minimax(state.withTurnMade(it), forPlayer, depth - 1) }
-                ?: relativeValue(state, forPlayer)
-            else -> state.freePositions
-                .minOfOrNull {
-                    minimax(state.withTurnMade(it), forPlayer, depth - 1)
-                } ?: relativeValue(state, forPlayer)
+            forPlayer -> {
+                var alphaValue = alpha
+                var maxVal: Double? = null
+                for (position in state.freePositions) {
+                    val value = minimax(state.withTurnMade(position), forPlayer, depth - 1, alphaValue, beta)
+                    maxVal = maxVal?.let { maxOf(value, it) } ?: value
+                    alphaValue = alphaValue?.let { maxOf(value, it) } ?: value
+                    if (beta == null) {
+                        continue
+                    }
+                    if (beta <= alphaValue) {
+                        break
+                    }
+                }
+                maxVal ?: relativeValue(state, forPlayer)
+            }
+            else -> {
+                var betaValue = beta
+                var minVal: Double? = null
+                for (position in state.freePositions) {
+                    val value = minimax(state.withTurnMade(position), forPlayer, depth - 1, alpha, betaValue)
+                    minVal = minVal?.let { minOf(value, it) } ?: value
+                    betaValue = betaValue?.let { minOf(value, it) } ?: value
+                    if (alpha == null) {
+                        continue
+                    }
+                    if (betaValue <= alpha) {
+                        break
+                    }
+                }
+                minVal ?: relativeValue(state, forPlayer)
+            }
         }
     } ?: throw AppException("Invalid state")
 }
