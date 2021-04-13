@@ -11,12 +11,14 @@ class DrawBoard : AbstractStep() {
                 }
             )
 
-            if (it.y != state.boardSize - 1) {
+            if (it.x != state.boardSize - 1) {
                 print("|")
                 return@forEach
             }
 
-            if (it.x != state.boardSize - 1) {
+            print("\t${(state.boardSize - it.y) * (state.boardSize + it.x)}")
+
+            if (it.y != 1 - state.boardSize) {
                 print("\n" + "-+".repeat(state.boardSize - 1) + "-" + "+-".repeat(state.boardSize - 1))
             }
 

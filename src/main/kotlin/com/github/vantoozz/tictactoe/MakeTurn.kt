@@ -1,5 +1,8 @@
 package com.github.vantoozz.tictactoe
 
+import kotlin.math.ceil
+import kotlin.math.pow
+
 class MakeTurn : AbstractStep() {
     override fun doRun(state: State): State {
         state.activePlayer?.let { activePlayer ->
@@ -27,9 +30,11 @@ class MakeTurn : AbstractStep() {
     }
 
 
+    private fun pickRandomPosition(state: State) = state.freePositions.random()
+
     private fun pickBestPosition(state: State, forPlayer: Figure): Position {
         val position = state.freePositions
-            .maxByOrNull { minimax(state.withTurnMade(it), forPlayer) }
+            .maxByOrNull { minimax(state.withTurnMade(it), forPlayer, 3) }
             ?: throw RuntimeException("Cannot make a turn")
 
         print("$position\n")
@@ -37,7 +42,10 @@ class MakeTurn : AbstractStep() {
         return position
     }
 
-    private fun minimax(state: State, forPlayer: Figure): Long {
+    private fun minimax(state: State, forPlayer: Figure, depth: Int): Long {
+        if (depth <= 0) {
+            return 0
+        }
 
         state.result?.let {
             if (it.draw) {
@@ -54,8 +62,13 @@ class MakeTurn : AbstractStep() {
 
         state.activePlayer?.let { activePlayer ->
             return when (activePlayer) {
-                forPlayer -> state.freePositions.maxOfOrNull { minimax(state.withTurnMade(it), forPlayer) } ?: 0L
-                else -> state.freePositions.minOfOrNull { minimax(state.withTurnMade(it), forPlayer) } ?: 0L
+                forPlayer -> state.freePositions
+                    .maxOfOrNull { minimax(state.withTurnMade(it), forPlayer, depth - 1) }
+                    ?: 0L
+                else -> state.freePositions
+                    .minOfOrNull {
+                        minimax(state.withTurnMade(it), forPlayer, depth - 1)
+                    } ?: 0L
             }
         } ?: throw RuntimeException("Invalid state")
     }
@@ -64,22 +77,31 @@ class MakeTurn : AbstractStep() {
         while (true) try {
             val input = readLine() ?: throw RuntimeException("No input")
 
-            val positionInt = try {
+            val cellNumber = try {
                 input.toInt()
             } catch (e: Exception) {
                 throw RuntimeException("Not a number")
             }
 
-            if (positionInt < 1 || positionInt > 9) {
-                throw RuntimeException("Position must be between 1 and 9")
+            val sideSide = state.boardSize * 2 - 1
+
+            val maxCellNumber = sideSide.toDouble().pow(2)
+
+            if (cellNumber < 1 || cellNumber > maxCellNumber) {
+                throw RuntimeException("Position must be between 1 and $maxCellNumber")
             }
 
-            val position = Position(positionInt, 0)
+
+            val position = Position(
+                x = (((cellNumber).rem(sideSide)).takeIf { it > 0 } ?: sideSide) - state.boardSize,
+                y = state.boardSize - ceil((cellNumber) / sideSide.toDouble()).toInt()
+            )
 
             if (state.figures.containsKey(position)) {
                 throw RuntimeException("Position already taken")
             }
 
+            println(position)
             return position
         } catch (e: Exception) {
             println(e.message)

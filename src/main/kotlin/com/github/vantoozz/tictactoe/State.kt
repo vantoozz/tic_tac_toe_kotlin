@@ -4,7 +4,7 @@ data class State(
     val figures: Map<Position, Figure?>,
     val activePlayer: Figure?,
     val result: Result? = null,
-    val boardSize: Int = 2,
+    val boardSize: Int = 5,
 ) {
     init {
         if (boardSize < 1) {
@@ -17,24 +17,34 @@ data class State(
         if (result == null && activePlayer == null) {
             throw RuntimeException("Not finished game must have an active player")
         }
+
+        setOf(
+            figures.minByOrNull { it.key.x }?.takeIf { it.key.x <= -boardSize },
+            figures.maxByOrNull { it.key.x }?.takeIf { it.key.x >= boardSize },
+            figures.minByOrNull { it.key.y }?.takeIf { it.key.y <= -boardSize },
+            figures.maxByOrNull { it.key.y }?.takeIf { it.key.y >= boardSize },
+        )
+            .filterNotNull()
+            .firstOrNull()
+            ?.let { throw RuntimeException("Position out of the board: $it") }
     }
 
 
     fun positions(
         predicate: (Position) -> Boolean = { true }
     ) = with(boardSize - 1) {
-        (-this..this)
-            .map { x ->
+        (this downTo -this)
+            .map { y ->
                 (-this..this)
-                    .map { y -> Position(x, y) }
+                    .map { x -> Position(x, y) }
             }
             .flatten()
             .filter { predicate(it) }
-            .toSet()
+            .toList()
     }
 
 
-    val freePositions: Set<Position>
+    val freePositions: List<Position>
         get() = positions { !figures.containsKey(it) }
 
     fun withTurnMade(position: Position): State {
