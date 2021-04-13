@@ -6,7 +6,7 @@ class DrawEndGame : AbstractStep() {
             result.winner?.let {
                 print("$it wins!")
             } ?: print("DRAW")
-        } ?: throw RuntimeException("No game result")
+        } ?: throw AppException("No game result")
 
         return state
     }

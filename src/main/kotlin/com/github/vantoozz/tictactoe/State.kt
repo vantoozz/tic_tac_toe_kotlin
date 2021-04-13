@@ -4,18 +4,18 @@ data class State(
     val figures: Map<Position, Figure?>,
     val activePlayer: Figure?,
     val result: Result? = null,
-    val boardSize: Int = 5,
+    val boardSize: Int = 2,
 ) {
     init {
         if (boardSize < 1) {
-            throw RuntimeException("Board size must be greater than zero")
+            throw AppException("Board size must be greater than zero")
         }
 
         if (result != null && activePlayer != null) {
-            throw RuntimeException("Finished game cannot have an active player")
+            throw AppException("Finished game cannot have an active player")
         }
         if (result == null && activePlayer == null) {
-            throw RuntimeException("Not finished game must have an active player")
+            throw AppException("Not finished game must have an active player")
         }
 
         setOf(
@@ -26,7 +26,7 @@ data class State(
         )
             .filterNotNull()
             .firstOrNull()
-            ?.let { throw RuntimeException("Position out of the board: $it") }
+            ?.let { throw AppException("Position out of the board: $it") }
     }
 
 
@@ -49,7 +49,7 @@ data class State(
 
     fun withTurnMade(position: Position): State {
         if (figures.containsKey(position)) {
-            throw RuntimeException("Position already taken")
+            throw AppException("Position already taken")
         }
 
         activePlayer?.let { player ->
@@ -58,7 +58,7 @@ data class State(
                 it[position] = player
             }.toMap()
 
-            val updatedResult = checkResult(updatedFigures)
+            val updatedResult = isGameOver(updatedFigures, boardSize)
 
             return copy(
                 figures = updatedFigures,
@@ -66,68 +66,7 @@ data class State(
                 activePlayer = if (null == updatedResult) activePlayer.opposite else null
             )
 
-        } ?: throw RuntimeException("Cannot make a turn. No active player")
-    }
-
-    private fun checkResult(figures: Map<Position, Figure?>): Result? {
-        if (boardSize < 2) {
-            return null
-        }
-
-        val rowSize = boardSize * 2 - 1
-
-        if (figures.size < rowSize) {
-            return null
-        }
-
-        val winners = figures
-            .map {
-                it.value?.let { figure ->
-                    figure to it.key
-                }
-            }
-            .filterNotNull()
-            .fold(mutableMapOf<Figure, Set<Position>>()) { carry, pair ->
-                carry.also {
-                    it[pair.first] = (it[pair.first] ?: emptySet()) + setOf(pair.second)
-                }
-            }
-            .toMap()
-            .map { entry ->
-                entry.key to entry.value
-                    .let { figures ->
-                        val minX = figures.minOfOrNull { it.x } ?: -(boardSize - 1)
-                        val minY = figures.minOfOrNull { it.y } ?: -(boardSize - 1)
-                        (minY until boardSize).map { y ->
-                            (minX until boardSize).map { x ->
-                                entry.value.hasAnyRow(
-                                    Position(x, y),
-                                    rowSize,
-                                    { position, offset -> position.copy(x = x + offset) },
-                                    { position, offset -> position.copy(y = y + offset) },
-                                    { position, offset -> position.copy(x = x + offset, y = y + offset) },
-                                    { position, offset -> position.copy(x = x - offset, y = y + offset) },
-                                )
-                            }
-                        }.flatten().count { it } > 0
-                    }
-            }
-            .filter { it.second }
-            .map { it.first }
-
-        if (winners.count() > 1) {
-            throw RuntimeException("More than one winner")
-        }
-
-        if (winners.count() == 1) {
-            return Result(draw = false, winner = winners.first())
-        }
-
-        if (freePositions.isEmpty()) {
-            return Result(draw = true)
-        }
-
-        return null
+        } ?: throw AppException("Cannot make a turn. No active player")
     }
 }
 
@@ -142,22 +81,6 @@ enum class Figure {
         }
 }
 
-private fun Set<Position>.hasAnyRow(
-    position: Position,
-    rowSize: Int,
-    vararg rules: (Position, Int) -> Position
-) =
-    rules.firstOrNull { hasRow(position, rowSize, it) } != null
-
-private fun Set<Position>.hasRow(
-    position: Position,
-    rowSize: Int,
-    nextPositionFn: (Position, Int) -> Position
-) = (0 until rowSize)
-    .map { nextPositionFn(position, it) }
-    .map { contains(it) }
-    .count { it } == rowSize
-
 data class Position(val x: Int, val y: Int)
 
 data class Result(
@@ -166,8 +89,8 @@ data class Result(
 ) {
     init {
         when (draw) {
-            true -> if (winner != null) throw RuntimeException("Drawn game cannot have a winner")
-            false -> if (winner == null) throw RuntimeException("Not a drawn game must have a winner")
+            true -> if (winner != null) throw AppException("Drawn game cannot have a winner")
+            false -> if (winner == null) throw AppException("Not a drawn game must have a winner")
         }
     }
 }

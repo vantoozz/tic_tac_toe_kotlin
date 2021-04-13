@@ -5,7 +5,7 @@ fun main() {
         .then(DrawEndGame())
         .run(
             tick(
-                State(emptyMap(), Figure.X),
+                State(emptyMap(), Figure.X, boardSize = 3),
                 DrawBoard()
                     .then(MakeTurn())
             )
