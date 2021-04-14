@@ -1,6 +1,10 @@
 package com.github.vantoozz.tictactoe
 
-data class State(
+import com.github.vantoozz.tictactoe.exceptions.AppException
+import com.github.vantoozz.tictactoe.rules.Rules
+
+internal data class State(
+    val rules: Rules,
     val figures: Map<Position, Figure?>,
     val activePlayer: Figure?,
     val result: Result? = null,
@@ -58,7 +62,7 @@ data class State(
                 it[position] = player
             }.toMap()
 
-            val updatedResult = isGameOver(updatedFigures, boardSize)
+            val updatedResult = rules.findResult(updatedFigures, boardSize)
 
             return copy(
                 figures = updatedFigures,
@@ -70,7 +74,7 @@ data class State(
     }
 }
 
-enum class Figure {
+internal enum class Figure {
     X,
     O;
 
@@ -81,9 +85,9 @@ enum class Figure {
         }
 }
 
-data class Position(val x: Int, val y: Int)
+internal data class Position(val x: Int, val y: Int)
 
-data class Result(
+internal data class Result(
     val winner: Figure? = null,
     val draw: Boolean,
 ) {

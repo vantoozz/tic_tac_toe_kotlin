@@ -1,6 +1,9 @@
-package com.github.vantoozz.tictactoe
+package com.github.vantoozz.tictactoe.steps
 
-class DrawBoard : AbstractStep() {
+import com.github.vantoozz.tictactoe.Figure
+import com.github.vantoozz.tictactoe.State
+
+internal class DrawBoard : AbstractStep() {
     override fun doRun(state: State): State {
         state.positions().forEach {
             print(

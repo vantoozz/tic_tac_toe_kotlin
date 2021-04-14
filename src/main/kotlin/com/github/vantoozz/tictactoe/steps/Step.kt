@@ -1,10 +1,12 @@
-package com.github.vantoozz.tictactoe
+package com.github.vantoozz.tictactoe.steps
+
+import com.github.vantoozz.tictactoe.State
 
 internal interface Step {
     fun run(state: State): State
 }
 
-abstract class AbstractStep : Step {
+internal abstract class AbstractStep : Step {
 
     private lateinit var nextStep: AbstractStep
 
