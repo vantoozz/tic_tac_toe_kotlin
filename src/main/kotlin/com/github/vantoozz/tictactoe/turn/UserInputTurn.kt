@@ -1,8 +1,8 @@
 package com.github.vantoozz.tictactoe.turn
 
-import com.github.vantoozz.tictactoe.exceptions.AppException
 import com.github.vantoozz.tictactoe.Position
 import com.github.vantoozz.tictactoe.State
+import com.github.vantoozz.tictactoe.exceptions.AppException
 import kotlin.math.ceil
 import kotlin.math.pow
 

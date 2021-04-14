@@ -1,53 +1,29 @@
 package com.github.vantoozz.tictactoe.rules
 
-import com.github.vantoozz.tictactoe.*
+import com.github.vantoozz.tictactoe.Figure
+import com.github.vantoozz.tictactoe.Position
+import com.github.vantoozz.tictactoe.Result
 import com.github.vantoozz.tictactoe.exceptions.AppException
+import com.github.vantoozz.tictactoe.lines.LinesFinder
 import kotlin.math.pow
 
-internal class SimpleRules : Rules {
+internal class SimpleRules(private val linesFinder: LinesFinder) : Rules {
 
     override fun findResult(figures: Map<Position, Figure?>, boardSize: Int): Result? {
         if (boardSize < 2) {
             return null
         }
 
-        val lineSize = boardSize * 2 - 1
+        val winLength = boardSize * 2 - 1
 
-        if (figures.size < lineSize) {
+        if (figures.size < winLength) {
             return null
         }
 
-        val winners = figures
-            .map {
-                it.value?.let { figure ->
-                    figure to it.key
-                }
-            }
-            .filterNotNull()
-            .fold(mutableMapOf<Figure, Set<Position>>()) { carry, pair ->
-                carry.also {
-                    it[pair.first] = (it[pair.first] ?: emptySet()) + setOf(pair.second)
-                }
-            }
-            .toMap()
-            .map { entry ->
-                entry.key to entry.value
-                    .let { figures ->
-                        val minX = figures.minOfOrNull { it.x } ?: -(boardSize - 1)
-                        val minY = figures.minOfOrNull { it.y } ?: -(boardSize - 1)
-                        (minY until boardSize).map { y ->
-                            (minX until boardSize).map { x ->
-                                entry.value.hasAnyLine(
-                                    Position(x, y),
-                                    lineSize,
-                                    *linesRules()
-                                )
-                            }
-                        }.flatten().count { it } > 0
-                    }
-            }
-            .filter { it.second }
-            .map { it.first }
+        val winners = linesFinder.find(figures)
+            .filter { it.length == winLength }
+            .map { it.figure }
+            .toSet()
 
         if (winners.count() > 1) {
             throw AppException("More than one winner")
@@ -63,11 +39,4 @@ internal class SimpleRules : Rules {
 
         return null
     }
-
-    override fun linesRules() = arrayOf<(Position, Int) -> Position>(
-        { position, offset -> position.copy(x = position.x + offset) },
-        { position, offset -> position.copy(y = position.y + offset) },
-        { position, offset -> position.copy(x = position.x + offset, y = position.y + offset) },
-        { position, offset -> position.copy(x = position.x - offset, y = position.y + offset) },
-    )
 }
