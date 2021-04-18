@@ -5,6 +5,7 @@ import com.github.vantoozz.tictactoe.Position
 import com.github.vantoozz.tictactoe.Result
 import com.github.vantoozz.tictactoe.exceptions.AppException
 import com.github.vantoozz.tictactoe.lines.LinesFinder
+import kotlin.math.max
 import kotlin.math.pow
 
 internal class SimpleRules(private val linesFinder: LinesFinder) : Rules {
@@ -14,7 +15,7 @@ internal class SimpleRules(private val linesFinder: LinesFinder) : Rules {
             return null
         }
 
-        val winLength = boardSize * 2 - 1
+        val winLength = 5
 
         if (figures.size < winLength) {
             return null

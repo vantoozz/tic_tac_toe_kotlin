@@ -85,7 +85,16 @@ internal enum class Figure {
         }
 }
 
-internal data class Position(val x: Int, val y: Int)
+internal data class Position(val x: Int, val y: Int) {
+    val neighbors: Set<Position>
+        get() =
+            (1 downTo -1).map { yOffset ->
+                (-1..1).map { xOffset ->
+                    Position(x + xOffset, y + yOffset)
+                        .takeUnless { it.x == x && it.y == y }
+                }.filterNotNull()
+            }.flatten().toSet()
+}
 
 internal data class Result(
     val winner: Figure? = null,

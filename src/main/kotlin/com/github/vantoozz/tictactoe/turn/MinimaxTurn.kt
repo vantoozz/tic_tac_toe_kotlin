@@ -5,16 +5,31 @@ import com.github.vantoozz.tictactoe.Position
 import com.github.vantoozz.tictactoe.State
 import com.github.vantoozz.tictactoe.appraiser.Appraiser
 import com.github.vantoozz.tictactoe.exceptions.AppException
+import kotlin.math.ceil
+import kotlin.math.pow
 
 internal class MinimaxTurn(
     private val appraiser: Appraiser,
-    private val depth: Int
+    private val maxDepth: Int
 ) : TurnHandler {
 
     override fun makeTurn(state: State): Position {
 
         val position = state.activePlayer?.let { forPlayer ->
-            state.freePositions.maxByOrNull { minimax(state.withTurnMade(it), forPlayer, depth) }
+            state.freePositions
+//                .sortedWith(FreePositionsComparator(state))
+                .maxByOrNull {
+                    minimax(
+                        state.withTurnMade(it),
+                        forPlayer,
+                        state.freePositions.count().let { freePositionsCount ->
+                            ceil(
+                                maxDepth *
+                                        (1 - (freePositionsCount / ((state.boardSize * 2 - 1).toDouble().pow(2))))
+                            ).toInt()
+                        }
+                    )
+                }
         } ?: throw AppException("Cannot make a turn")
 
         print("$position\n")

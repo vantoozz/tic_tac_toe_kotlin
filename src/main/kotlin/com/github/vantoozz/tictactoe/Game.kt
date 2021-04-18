@@ -1,5 +1,6 @@
 package com.github.vantoozz.tictactoe
 
+import com.github.vantoozz.tictactoe.appraiser.Cached
 import com.github.vantoozz.tictactoe.appraiser.LinesAppraiser
 import com.github.vantoozz.tictactoe.lines.SimpleLinesFinder
 import com.github.vantoozz.tictactoe.rules.SimpleRules
@@ -12,14 +13,15 @@ import com.github.vantoozz.tictactoe.turn.UserInputTurn
 
 
 fun main() {
+    val appraiser = Cached(LinesAppraiser(SimpleLinesFinder()))
     DrawEndGame().then(DrawBoard())
         .run(
             tick(
-                State(SimpleRules(SimpleLinesFinder()), emptyMap(), Figure.X, boardSize = 2),
+                State(SimpleRules(SimpleLinesFinder()), emptyMap(), Figure.X, boardSize = 5),
                 DrawBoard()
                     .then(MakeTurn(Figure.X, UserInputTurn()))
                     .then(DrawBoard())
-                    .then(MakeTurn(Figure.O, MinimaxTurn(LinesAppraiser(SimpleLinesFinder()), 3)))
+                    .then(MakeTurn(Figure.O, MinimaxTurn(appraiser, 5)))
             )
         )
 }
